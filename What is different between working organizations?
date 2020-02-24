@@ -1,0 +1,119 @@
+library(haven)
+library(foreign)
+library(questionr)
+library(arm)
+library(car)
+library(nnet)
+
+BHPS <- read_sav("Warwick/QS903 Advanced Quantitative Research/essay/British Household Panel Survey 2009/spss/spss19/bhps_w18/rindresp.sav")
+attach(BHPS)
+
+job<-cbind(
+  rjbsect[rjbsect>0&rjbttwm>0&rjbttwt>0&rjbsat>0&rjbopps>0&rjbot>-1],
+  rjbsat[rjbsect>0&rjbttwm>0&rjbttwt>0&rjbsat>0&rjbopps>0&rjbot>-1],
+  rjbopps[rjbsect>0&rjbttwm>0&rjbttwt>0&rjbsat>0&rjbopps>0&rjbot>-1],
+  rjbot[rjbsect>0&rjbttwm>0&rjbttwt>0&rjbsat>0&rjbopps>0&rjbot>-1]
+)
+job<-as.data.frame(job)
+names(job)=c("sector","sat","opp","time")
+
+#data summary
+summary(job$sat)
+summary(job$opp)
+summary(job$time)
+a<-rjbsect[rjbsect>0&rjbttwm>0&rjbttwt>0&rjbsat>0&rjbopps>0&rjbot>-1]
+table(a)
+
+job$sector[job$sector==1]=1
+job$sector[job$sector==2|job$sector==3]=2
+job$sector[job$sector>3]=3
+
+cor_job<-cor(job)
+sum_job<-summary(job)
+
+
+##binary logit model
+fit.sat=multinom(sector ~ sat , data=job)
+summary(fit.sat)
+fit.opp=multinom(sector ~ opp , data=job)
+summary(fit.opp)
+fit.ot=multinom(sector ~ time , data=job)
+summary(fit.ot)
+
+
+##multinomial logit model
+fit.mlm=multinom(sector ~ sat+opp+time , data=job)
+summary(fit.mlm)
+p.mlm = function(X, fit){
+  b = coef(fit)
+  p2 = exp(X%*%b[1,]) /
+    (1 + exp(X%*%b[1,]) + exp(X%*%b[2,]))
+  p3 = exp(X%*%b[2,]) /
+    (1 + exp(X%*%b[1,]) + exp(X%*%b[2,]))
+  p1 = 1 - p2 - p3
+  cbind(p1, p2, p3)
+}
+
+
+##Plot proportion of Sector virus working time
+par(mfrow=c(1,3))
+
+#Having promotion opportunity
+plot(c(1,11), c(0.1,0.7), type="n",  main = "Having Opportunity" , xlab="Daily Working Overtime", ylab="Proportion of Sector")
+curve(p.mlm(cbind(1,mean(job$sat),1,x), fit.mlm)[,1], lty=1, add = TRUE)
+curve(p.mlm(cbind(1,mean(job$sat),1,x), fit.mlm)[,2], lty=2, add = TRUE)
+curve(p.mlm(cbind(1,mean(job$sat),1,x), fit.mlm)[,3], lty=3, add = TRUE)
+legend("topright", legend=c("Private", "Government", "Others"), pch=1:3, lty=1:3, bty="n")
+
+plot(c(1,7), c(0,0.8), type="n",  main = "Having Opportunity" , xlab="Job Satisfaction", ylab="Proportion of Sector")
+curve(p.mlm(cbind(1,x,1,mean(job$time)), fit.mlm)[,1], lty=1, add = TRUE)
+curve(p.mlm(cbind(1,x,1,mean(job$time)), fit.mlm)[,2], lty=2, add = TRUE)
+curve(p.mlm(cbind(1,x,1,mean(job$time)), fit.mlm)[,3], lty=3, add = TRUE)
+
+#Having no promotion opportunity
+plot(c(1,11), c(0.1,0.7), type="n",  main = "No Opportunity" , xlab="Daily Working Overtime", ylab="Proportion of Sector")
+curve(p.mlm(cbind(1,mean(job$sat),2,x), fit.mlm)[,1], lty=1, add = TRUE)
+curve(p.mlm(cbind(1,mean(job$sat),2,x), fit.mlm)[,2], lty=2, add = TRUE)
+curve(p.mlm(cbind(1,mean(job$sat),2,x), fit.mlm)[,3], lty=3, add = TRUE)
+
+plot(c(1,7), c(0,0.8), type="n",  main = "No Opportunity" , xlab="Job Satisfaction", ylab="Proportion of Sector")
+curve(p.mlm(cbind(1,x,2,mean(job$time)), fit.mlm)[,1], lty=1, add = TRUE)
+curve(p.mlm(cbind(1,x,2,mean(job$time)), fit.mlm)[,2], lty=2, add = TRUE)
+curve(p.mlm(cbind(1,x,2,mean(job$time)), fit.mlm)[,3], lty=3, add = TRUE)
+
+#Legend
+plot(c(1,11), c(0.1,0.7), type="n",   main = "Legend")
+legend("center", legend=c("Private", "Government", "Others"), pch=1:3, lty=1:3, bty="n")
+
+
+## Plot binned residuals against predictied probabilites
+# predicted probabilites
+p.pri = fitted(fit.mlm)[,1]
+p.pub = fitted(fit.mlm)[,2]
+p.oth = fitted(fit.mlm)[,3]
+
+# observed outcomes
+y.pri = ifelse(job$sector==1, 1, 0)
+y.pub = ifelse(job$sector==2, 1, 0)
+y.oth = ifelse(job$sector==3, 1, 0)
+par(mfrow=c(1,3))
+binnedplot(p.pri, y.pri-p.pri, nclass=40, xlab="Predicted Probability", 
+           main="Private")
+binnedplot(p.pub, y.pub-p.pub, nclass=40, xlab="Predicted Probability", 
+           main="Government")
+binnedplot(p.oth, y.oth-p.oth, nclass=40, xlab="Predicted Probability", 
+           main="Other")
+
+
+##Average predictive comparison (highest and lowest job satisfactory)
+x.lo=job
+x.lo$sat =min(job$time)
+x.hi=job
+x.hi$sat=max(job$time)
+delta = predict(fit.mlm, x.hi, type="probs") - predict(fit.mlm, x.lo, type="probs")
+colMeans(delta)
+
+p.mlm(cbind(1,1,1,mean(job$time)), fit.mlm)
+p.mlm(cbind(1,7,1,mean(job$time)), fit.mlm)
+p.mlm(cbind(1,1,2,mean(job$time)), fit.mlm)
+p.mlm(cbind(1,7,2,mean(job$time)), fit.mlm)

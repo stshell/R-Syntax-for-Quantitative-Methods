@@ -1,0 +1,236 @@
+setwd("~/Warwick/PO7E7 Data Visualization/Essay/reading/BSA2013")
+library(haven)
+bsa <- read_sav("~/Warwick/PO7E7 Data Visualization/R code/data/2013/spss/spss19/bsa13ukds.sav")
+attach(bsa)
+library(reshape2)
+library(ggplot2)
+library(gcookbook)
+library(reshape2)
+library(gcookbook)
+library(ggpubr)
+
+#dependent variable:NatCitzn, Partriot2, ClosePty , Politics, PartyId2, SocTrust
+#independent variable:RSex, RAge, HHIncD, HEdQual3, BAbrResp, RClassGp
+
+
+#Introduction
+
+#Different age distribution of NatCitzn between men and women
+r<- cbind(RAge[NatCitzn==1|NatCitzn==2],RSex[NatCitzn==1|NatCitzn==2])
+r<- data.frame(na.omit(r))
+names(r)=c("Age","Gender")
+r$Gender=factor(as.numeric(r$Gender))
+levels(r$Gender)=c("male","female")
+ggplot(r,aes(x=Age,fill=Gender))+geom_density(alpha=0.3)+annotate("rect", xmin=40, xmax=70, ymin=0, ymax=0.0225, alpha=.1, fill="blue")
+       
+#Age differences                                      
+r<-cbind(NatCitzn[(NatCitzn<3|NatCitzn>3)&NatCitzn<6&(RAge<40|RAge>65)],
+         RAge[(NatCitzn<3|NatCitzn>3)&NatCitzn<6&(RAge<40|RAge>65)])
+r<-data.frame(na.omit(r))
+names(r)=c("NatCitzn","RAge")
+r$RAge[r$RAge>65]="Senior"
+r$RAge[r$RAge<40]="Youth"
+r$NatCitzn[r$NatCitzn==1|r$NatCitzn==2]="Would rather to be a citzen of Britain"
+r$NatCitzn[r$NatCitzn==4|r$NatCitzn==5]="Would rather not to be a citzen of Britain"
+barplot(table(r), legend.text = TRUE, col =c ("rosybrown","salmon2"),
+        beside = TRUE,args.legend = c(x=5,y=-60) )
+
+
+#Born place and Partriot2 (How important To have British citizenship)
+r<-cbind(Patriot2[BAbrResp <3&Patriot2<5],BAbrResp [BAbrResp <3&Patriot2<5])
+r<-data.frame(na.omit(r))
+names(r)=c("Patriot2","BAbrResp")
+r$BAbrResp=as.factor(r$BAbrResp)
+r$Patriot2=as.factor(r$Patriot2)
+levels(r$BAbrResp)=c("Born in the UK","Born abroad")
+levels(r$Patriot2)=c("Very important",
+                     "Fairly important",
+                     "Not very important",
+                     "Not important at all")
+barplot(table(r), beside = TRUE, legend.text = TRUE, col =c ("pink","pink2","pink3","pink4"))
+
+
+#Data, analysis and methodology
+
+#1. Interest in Politics
+
+#Social-Economic class
+r<-table(Politics[RClassGp<6],RClassGp[RClassGp<6])
+r<-data.frame(r)
+names(r)<-c("Politics","RClassGp","Freq")
+value1 <- c('a great deal','quite a lot','some','not very much','not at all')
+value2 <- c('Managerial & professional occups',
+            'Intermediate occupations',
+            'Employers in small org; own account workers',
+            'Lower supervisory & technical occupations',
+            'Semi-routine & routine occupations')
+r$Politics=as.factor(r$Politics)
+r$RClassGp=as.factor(r$RClassGp)
+levels(r$Politics)=value1
+levels(r$RClassGp)=value2
+ggplot(r,aes(x=Politics,y=RClassGp,size=Freq))+geom_point(col= 'slateblue3' )+scale_size_area(max_size = 15)+labs(x="Interests in politics",y="Social-economic class")
+
+#household income
+r<-table(Politics[HHIncQ<5],HHIncQ[HHIncQ<5])
+r<-data.frame(r)
+names(r)<-c("Politics","HHIncQ","Freq")
+value1 <- c('a great deal','quite a lot','some','not very much','not at all')
+value2 <- c('less than 1200',
+            '1201-2200',
+            '2201-3700',
+            '3701 or more')
+r$Politics=as.factor(r$Politics)
+r$HHIncQ=as.factor(r$HHIncQ)
+levels(r$Politics)=value1
+levels(r$HHIncQ)=value2
+ggplot(r,aes(x=Politics,y=HHIncQ,size=Freq))+geom_point(col= "tomato" )+scale_size_area(max_size = 15)+labs(x="Interests in politics",y="Household income (pounds per month)")
+
+#education level
+r<-table(Politics[HEdQual3<5],HEdQual3[HEdQual3<5])
+r<-data.frame(r)
+names(r)<-c("Politics","HEdQual3","Freq")
+value1 <- c('a great deal','quite a lot','some','not very much','not at all')
+value2 <- c('Degree',
+            'Higher educ below degree/A level',
+            'O level or equiv/CSE',
+            'No qualification')
+r$Politics=as.factor(r$Politics)
+r$HEdQual3=as.factor(r$HEdQual3)
+levels(r$Politics)=value1
+levels(r$HEdQual3)=value2
+ggplot(r,aes(x=Politics,y=HEdQual3,size=Freq))+geom_point(col= "violetred" )+scale_size_area(max_size = 15)+labs(x="Interests in politics",y="Highest education qualification")
+
+
+#2. Education level
+#classified: degree vs without degree
+
+#social trust
+r<-cbind(SocTrust[SocTrust<3],HEdQual3[SocTrust<3])
+r<-data.frame(na.omit(r))
+names(r)=c("SocTrust","HEdQual3")
+r$SocTrust=as.factor(r$SocTrust)
+levels(r$SocTrust)=c("Most people can be trust",
+                     "Can't be too careful in dealing with people")
+r$HEdQual3[r$HEdQual3!=1]="No degree"
+r$HEdQual3[r$HEdQual3==1]="Degree"
+barplot(table(r), legend.text = TRUE, col =c ("olivedrab","olivedrab2"),
+        beside = TRUE,args.legend=c(x=4.5,y=580))
+
+#interest in political issues
+r<-cbind(Politics,HEdQual3)
+r<-data.frame(na.omit(r))
+names(r)=c("Politics","HEdQual3")
+r$HEdQual3[r$HEdQual3!=1]="No degree"
+r$HEdQual3[r$HEdQual3==1]="Degree"
+r$Politics[r$Politics==1|r$Politics==2|r$Politics==3]="Have interst"
+r$Politics[r$Politics==4|r$Politics==5]="Have no interst"
+barplot(table(r), legend.text = TRUE, col =c ("olivedrab","olivedrab2"),
+        beside = TRUE,args.legend=c(x=2.5,y=580))
+
+#closed to a party
+r<-cbind(ClosePty[ClosePty<3],HEdQual3[ClosePty<3])
+r<-data.frame(na.omit(r))
+names(r)=c("ClosePty","HEdQual3")
+r$HEdQual3[r$HEdQual3!=1]="No degree"
+r$HEdQual3[r$HEdQual3==1]="Degree"
+r$ClosePty[r$ClosePty==1]="Closed to a party"
+r$ClosePty[r$ClosePty==2]="Not closed to a party"
+barplot(table(r), legend.text = TRUE, col =c ("olivedrab","olivedrab2"),
+        beside = TRUE,args.legend=c(x=3,y=1255))
+
+#nationality identification
+r<-cbind(NatCitzn[NatCitzn<8],HEdQual3[NatCitzn<8])
+r<-data.frame(na.omit(r))
+names(r)=c("NatCitzn","HEdQual3")
+r$HEdQual3[r$HEdQual3!=1]="No degree"
+r$HEdQual3[r$HEdQual3==1]="Degree"
+r$NatCitzn[r$NatCitzn==1|r$NatCitzn==2]="Would rather be a citizen of Britain"
+r$NatCitzn[r$NatCitzn==3]="No tendency"
+r$NatCitzn[r$NatCitzn==4|r$NatCitzn==5]="Would rather not be a citizen of Britain"
+barplot(table(r), legend.text = TRUE,
+        col =c ("olivedrab1","olivedrab3","olivedrab4"),
+        beside = TRUE, args.legend = c(x=5.5,y=548))
+
+
+#Results
+
+r<-cbind(RAge[HEdQual3<5&NatCitzn<6],
+         HEdQual3[HEdQual3<5&NatCitzn<6],
+         NatCitzn[HEdQual3<5&NatCitzn<6])
+
+r<-na.omit(r)
+r<-data.frame(r)
+group<-matrix()
+r<-cbind(r,group)
+names(r)=c("RAge","HEdQual3","NatCitzn","group")
+r$NatCitzn[r$NatCitzn==1|r$NatCitzn==2]="Would rather be a citizen of Britain"
+r$NatCitzn[r$NatCitzn==3]="No tendency"
+r$NatCitzn[r$NatCitzn==4|r$NatCitzn==5]="Would rather not be a citizen of Britain"
+r$group[r$RAge<40&r$HEdQual3!=1]="GroupI"
+r$group[r$RAge>65&r$HEdQual3!=1]="GroupII"
+r$group[r$RAge>65&r$HEdQual3==1]="GroupIV"
+r$group[r$RAge<40&r$HEdQual3==1]="GroupIII"
+
+#Group I
+h<-table(r$NatCitzn[r$group=="GroupI"])
+h<-data.frame(h)
+names(h)=c("GroupI","Freq")
+
+h$percent_value = round(h$Freq/sum(h$Freq) * 100)
+labs <- paste0(h$percent_value, "%")
+
+ggdonutchart( h, "Freq", 
+      lab.pos = "in",
+      lab.font = "white",
+      label = labs,  
+      fill = "GroupI",                            
+      color = "white",                 
+      palette = c("#00AFBB", "#E7B800", "#FC4E07") )
+
+#Group II
+h<-table(r$NatCitzn[r$group=="GroupII"])
+h<-data.frame(h)
+names(h)=c("GroupII","Freq")
+
+h$percent_value = round(h$Freq/sum(h$Freq) * 100)
+labs <- paste0(h$percent_value, "%")
+
+ggdonutchart(h, "Freq",
+             lab.pos = "in",
+             lab.font = "white",
+             label = labs,  
+             fill = "GroupII",                            
+             color = "white",                 
+             palette = c("#00AFBB", "#E7B800", "#FC4E07") )
+
+#Group III
+h<-table(r$NatCitzn[r$group=="GroupIII"])
+h<-data.frame(h)
+names(h)=c("GroupIII","Freq")
+
+h$percent_value = round(h$Freq/sum(h$Freq) * 100)
+labs <- paste0(h$percent_value, "%")
+
+ggdonutchart( h, "Freq", 
+              lab.pos = "in",
+              lab.font = "white",
+              label = labs,  
+              fill = "GroupIII",                            
+              color = "white",                 
+              palette = c("#00AFBB", "#E7B800", "#FC4E07") )
+
+#Group IV
+h<-table(r$NatCitzn[r$group=="GroupIV"])
+h<-data.frame(h)
+names(h)=c("GroupIV","Freq")
+
+h$percent_value = round(h$Freq/sum(h$Freq) * 100)
+labs <- paste0(h$percent_value, "%")
+
+ggdonutchart( h, "Freq", 
+              lab.pos = "in",
+              lab.font = "white",
+              label = labs,  
+              fill = "GroupIV",                            
+              color = "white",                 
+              palette = c("#00AFBB", "#E7B800", "#FC4E07") )
