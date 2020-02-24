@@ -1,0 +1,188 @@
+library(haven)
+bsa<- read_sav("Warwick/QS905Fundamentals in Quantitative Research Methods/Essay/BAS data/2016/spss/spss19/bsa16_to_ukda.sav")
+attach(bsa)
+library(reshape2)
+library(ggplot2)
+library(gcookbook)
+library(reshape2)
+library(gcookbook)
+library(ggpubr)
+
+#1.Discriptive
+
+#TrstONS
+#Label:How much trust do you have in statistics produced by ONS? 
+table(TrstONS)
+
+#TrONSY1-TrONSY9
+#Label:Reasons why you trust ONS statistics
+count_TrONSY<-
+  cbind(
+    table(TrONSY1),
+    table(TrONSY2),
+    table(TrONSY3),
+    table(TrONSY4),
+    table(TrONSY5),
+    table(TrONSY6),
+    table(TrONSY7),
+    table(TrONSY8),
+    table(TrONSY9)
+)
+
+count_TrONSY1<-count_TrONSY[1:3,]
+
+
+barplot(count_TrONSY,beside=TRUE,main="Reason of Trusting ONS Statistics",xlab = "Reasons",ylab = "Reponses",legend=c("Not Metioned","Metioned","Don't know","Most important"),col = c("red","light blue","purple","yellow"),args.legend = c(x=10,y=-156))
+        
+#TrONSN1-TrONSN10
+#Label:Reasons why you not trust ONS statistics
+count_TrONSN<-
+  cbind(
+    table(TrONSN1),
+    table(TrONSN2),
+    table(TrONSN3),
+    table(TrONSN4),
+    table(TrONSN5),
+    table(TrONSN6),
+    table(TrONSN7),
+    table(TrONSN8),
+    table(TrONSN9),
+    table(TrONSN10)
+  )
+
+count_TrONSN1<-count_TrONSN[1:3,]
+
+
+barplot(count_TrONSN1,beside=TRUE,main="Reason of Not Trusting ONS Statistics",
+        xlab = "Reasons",ylab = "Reponses",
+        legend=c("Not Metioned","Metioned","Don't know"),
+        col = c("red","light blue","purple"),args.legend = c(x=10,y=-30))
+
+#TrstONSWY
+#Label:Most important reason for trusting statistics produced by ONS
+table(TrstONSWY)
+barplot(table(TrstONSWY),main="Most important reason for trusting statistics produced by ONS",
+        xlab = "Reasons",ylab = "Reponses",names.arg = FALSE )
+
+#TrstONSWN
+#Label:Most important reason for not trusting statistics produced by ONS
+table(TrstONSWN)
+barplot(table(TrstONSWN),main="Most important reason for not trusting statistics produced by ONS",
+        xlab = "Reasons",ylab = "Reponses",names.arg = FALSE )
+
+#2.Bivariate Analysis
+#age,gender,education,income
+cor.test(Rage,TrstONS,method = "spearman")
+cor.test(Rsex,TrstONS,method = "kendall")
+cor.test(HEdQual,TrstONS,method = "spearman")
+cor.test(HHincome,TrstONS,method = "spearman")
+
+#AwONS, ONSus
+#Strength of respective relationship between awareness and trust in ONS, usage and trust in ONS
+cor.test(AwONS,TrstONS,method = "kendall")
+cor.test(ONSus,TrstONS,method = "spearman")
+
+#plot the relations between awareness and trust in ONS
+r<-table(AwONS,TrstONS)
+r_melt<-melt(r)
+r<-data.frame(r)
+p<-ggplot(r,aes(x=TrstONS,y=AwONS,size=Freq))
+p+geom_point()
+
+#plot the relations between usage and trust in ONS
+r<-table(ONSus,TrstONS)
+r_melt<-melt(r)
+r<-data.frame(r)
+p<-ggplot(r,aes(x=TrstONS,y=ONSus,size=Freq))
+p+geom_point()
+
+
+#ConfO
+#Strength of relationship between the confidencial of data and trust in ONS
+cor.test(ConfO ,TrstONS,method = "spearman")
+
+#plot the relations between the confidencial of data and trust in ONS
+r<-table(ConfO,TrstONS)
+r_melt<-melt(r)
+r<-data.frame(r)
+p<-ggplot(r,aes(x=TrstONS,y=ConfO,size=Freq))
+p+geom_point()
+
+#StatImp,StatPI
+#Strength of respective relationship between the validility and trust in ONS, reliability and trust in ONS
+cor.test(StatImp ,TrstONS,method = "spearman")
+cor.test(StatPI ,TrstONS,method = "spearman")
+
+#plot the relations between the validility of data and trust in ONS
+r<-table(StatImp,TrstONS)
+r_melt<-melt(r)
+r<-data.frame(r)
+p<-ggplot(r,aes(x=TrstONS,y=StatImp,size=Freq))
+p+geom_point()
+
+#plot the relations between the reliability of data and trust in ONS
+r<-table(StatPI,TrstONS)
+r_melt<-melt(r)
+r<-data.frame(r)
+p<-ggplot(r,aes(x=TrstONS,y=StatPI,size=Freq))
+p+geom_point()
+
+#StatAcc, StatHon
+#Strength of respective relationship between the accuracy and trust in ONS, government honesty and trust in ONS
+cor.test(StatAcc ,TrstONS,method = "spearman")
+cor.test(StatHon ,TrstONS,method = "spearman")
+
+#plot the relations between the government honesty and trust in ONS
+r<-table(StatHon,TrstONS)
+r_melt<-melt(r)
+r<-data.frame(r)
+p<-ggplot(r,aes(x=TrstONS,y=StatHon,size=Freq))
+p+geom_point()
+
+
+#3.multivariate analysis 
+#consider the co-influence of awarness and usage
+r<-na.omit(cbind(AwONS,ONSus,TrstONS))
+r<-data.frame(r)
+r1<-unite(r,"Awarness&Usage",c("AwONS","ONSus"),sep = "_",na.rm = FALSE)
+r2<-rbind(
+  subset(r1,r1[,1]=="1_1"),
+  subset(r1,r1[,1]=="1_2"),
+  subset(r1,r1[,1]=="1_3"),
+  subset(r1,r1[,1]=="1_4"),
+  subset(r1,r1[,1]=="2_4")
+)
+rt<-table(r2[,1],r2[,2])
+rt<-data.frame(rt)
+p<-ggplot(rt,aes(x=Var2,y=Var1,size=Freq))
+p+geom_point()
+r2[,1]<-as.factor(r2[,1])
+levels(r2[,1])<-c(1,2,3,4,5)
+r2[,1]<-as.numeric(r2[,1])
+cor(r2,method = "kendall")
+
+#correlation between variables
+r<-na.omit(cbind(TrstONS[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6], Rage[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6]/20,                 HEdQual[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6],                 AwONS[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6],                 ONSus[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6],                 ConfO[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6],                 StatImp[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6],                 StatPI[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6],                 StatAcc[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6],                 StatHon[HEdQual<6&AwONS<4&ONSus<5&ConfO<5&StatImp<6&StatPI<6&StatAcc<6&StatHon<6]))
+r<-data.frame(r)
+core<-round(cor(r,method = "spearman"),2)
+names(r)=c("TrstONS1","age1","HEdQual1","AwONS1","ONSus1",
+           "ConfO1","StatImp1","StatPI1","StatAcc1","StatHon1")
+attach(r)
+#Model 1
+#HEdQual+Rage
+mode<-lm(TrstONS1~HEdQual1+age1)
+summary(mode)
+
+#Model 2
+mode<-lm(TrstONS1~HEdQual1+age1+ StatHon1+ConfO1)
+summary(mode)
+
+#Model 3
+#HEdQual+StatHon+ConfO+StatImp
+mode<-lm(TrstONS1~HEdQual1+age1+StatHon1+ConfO1+StatImp1)
+summary(mode)
+
+#Model 4
+#HEdQual+StatHon+ConfO+StatImp
+mode<-lm(TrstONS1~HEdQual1+StatHon1+ConfO1+StatImp1)
+summary(mode)
